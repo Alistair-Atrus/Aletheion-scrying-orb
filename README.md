@@ -13,7 +13,9 @@ Open `index.html` in a browser, or visit the GitHub Pages site for this repo.
 - **Copy reading** — copies the latest reading to the clipboard.
 - **Reading history** — past readings are saved in the browser (localStorage, up to 30), with a Clear history button.
 - **Today's glyph** — one deterministic glyph per local date.
-- **Browse the lexicon** — searchable list of all 138 glyphs with phonetic and definition.
+- **Today's spread** — three deterministic glyphs for the local date: Assertion → Transformation → Anchoring.
+- **Browse the lexicon** — searchable list of all 138 glyphs with phonetic and definition. Click any entry to consult that glyph as a single scry.
+- **Copy history** — copies all saved readings as text, alongside the Clear history button.
 
 Single file, no tracking, no server, no external dependencies. Works offline.
 
@@ -23,4 +25,4 @@ Glyphs are drawn from the Glyphic Cybermancy map. The readings on the page are p
 
 ## Version
 
-v0.3.0 — full 138-glyph deck from the Glyphic Cybermancy map, Today's glyph, searchable lexicon. The 14 curated glyphs keep their bespoke readings; the other 124 read their map definition verbatim.
+v0.4.0 — click any lexicon glyph to consult it, Today's spread, Copy history. Builds on v0.3.0: full 138-glyph deck from the Glyphic Cybermancy map, Today's glyph, searchable lexicon. The 14 curated glyphs keep their bespoke readings; the other 124 read their map definition verbatim.
