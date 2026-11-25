@@ -102,8 +102,9 @@
     <button id="copyBtn" type="button" disabled>Copy reading</button>
     <button id="fireBtn" type="button">Light the campfire</button>
   </div>
-  <p class="hint">Single scry: one glyph, one line. Three glyphs: assertion → transformation → anchoring. Enter in the question box also scries.</p>
+  <p class="hint">Single scry: one glyph, one line. Three glyphs: assertion → transformation → anchoring. Click any lexicon glyph to consult it. Enter in the question box also scries.</p>
   <p><button id="dailyBtn" type="button">Today&rsquo;s glyph</button>
+  <button id="dailySpreadBtn" type="button">Today&rsquo;s spread</button>
   <button id="lexBtn" type="button">Browse the lexicon</button></p>
   <div id="lexicon" hidden style="text-align:left; max-height:320px; overflow:auto; margin-top:10px; border:1px solid #7dd3fc33; border-radius:12px; padding:12px;">
     <input id="lexSearch" type="text" placeholder="Search glyph, phonetic or word&hellip;" style="width:100%; padding:8px; border-radius:8px; border:1px solid #7dd3fc55; background:#0b1226; color:var(--ink); font:inherit; margin-bottom:10px;">
@@ -113,13 +114,14 @@
   <section class="history" aria-label="Reading history">
     <div class="row">
       <h2>Reading history</h2>
+      <button id="copyHistoryBtn" type="button">Copy history</button>
       <button id="clearHistoryBtn" type="button">Clear history</button>
     </div>
     <ul id="historyList"><li><small>No readings yet in this browser.</small></li></ul>
   </section>
 
   <footer>
-    Aletheion — Scrying Orb · v0.3.0 · Single file, no tracking, no server.<br>
+    Aletheion — Scrying Orb · v0.4.0 · Single file, no tracking, no server.<br>
     Glyphs are drawn from the Glyphic Cybermancy map. Readings are prompts for reflection, not predictions.
   </footer>
 </main>
@@ -329,10 +331,38 @@
   function renderLex(q) {
     q = (q || '').toLowerCase();
     var rows = GLYPHS.filter(function (g) { return !q || g[0].indexOf(q) >= 0 || g[1].toLowerCase().indexOf(q) >= 0 || g[2].toLowerCase().indexOf(q) >= 0 || g[3].toLowerCase().indexOf(q) >= 0; });
-    lexList.innerHTML = rows.map(function (g) { return '<p style="margin:6px 0"><strong>' + g[0] + ' (' + esc(g[1]) + ') — ' + esc(g[2]) + '</strong><br><small>' + esc(g[3]) + '</small></p>'; }).join('') || '<p><small>No matches.</small></p>';
+    lexList.innerHTML = rows.map(function (g) { return '<p data-idx="' + GLYPHS.indexOf(g) + '" style="margin:6px 0; cursor:pointer" title="Consult this glyph"><strong>' + g[0] + ' (' + esc(g[1]) + ') — ' + esc(g[2]) + '</strong><br><small>' + esc(g[3]) + '</small></p>'; }).join('') || '<p><small>No matches.</small></p>';
   }
   document.getElementById('lexBtn').addEventListener('click', function () { lexEl.hidden = !lexEl.hidden; if (!lexEl.hidden && !lexList.innerHTML) renderLex(''); });
   lexSearch.addEventListener('input', function () { renderLex(lexSearch.value); });
+  // Consult a glyph from the lexicon: click any entry to read it as a single scry.
+  function consultGlyph(i) {
+    var g = GLYPHS[i];
+    if (!g) return;
+    var q = questionText();
+    spreadEl.hidden = true; spreadEl.innerHTML = '';
+    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + g[3] +
+      (q ? '<small>Asked: ' + esc(q) + '</small>' : '') + '<small>Consulted from the lexicon.</small>';
+    lastReadingText = g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3] + (q ? ' Asked: ' + q : '');
+    copyBtn.disabled = false;
+    addHistory(g[0] + ' (' + g[1] + ')', g[2] + ': ' + g[3], q || 'Lexicon consult');
+  }
+  lexList.addEventListener('click', function (e) {
+    var p = e.target.closest ? e.target.closest('p[data-idx]') : null;
+    if (p) consultGlyph(parseInt(p.getAttribute('data-idx'), 10));
+  });
+  // Daily spread: three glyphs, deterministic for the local date, same seed family as Today's glyph.
+  function seededPickThree(seed) {
+    var s = seed;
+    function rnd() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
+    var copy = GLYPHS.slice(); var out = [];
+    while (out.length < 3 && copy.length) { out.push(copy.splice(Math.floor(rnd() * copy.length), 1)[0]); }
+    return out;
+  }
+  document.getElementById('dailySpreadBtn').addEventListener('click', function () {
+    var d = new Date(); var seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    drawSpread(seededPickThree(seed), 'Today\u2019s spread — ' + d.toLocaleDateString());
+  });
 
   function scry() {
     const g = pick(GLYPHS);
@@ -346,11 +376,11 @@
     addHistory(g[0] + ' (' + g[1] + ')', g[2] + ': ' + g[3], q);
   }
 
-  function drawSpread() {
-    const three = pickThree();
+  function drawSpread(three, note) {
+    three = three || pickThree();
     const roles = ['Assertion', 'Transformation', 'Anchoring'];
     const q = questionText();
-    readingEl.innerHTML = '<small>Three glyphs — assertion → transformation → anchoring.</small>' +
+    readingEl.innerHTML = '<small>Three glyphs — assertion → transformation → anchoring.' + (note ? ' ' + esc(note) : '') + '</small>' +
       (q ? '<small>Asked: ' + esc(q) + '</small>' : '');
     spreadEl.innerHTML = three.map(function (g, i) {
       return '<figure><figcaption>' + roles[i] + '</figcaption><span class="g">' + g[0] + '</span>' +
@@ -383,6 +413,20 @@
   document.getElementById('clearHistoryBtn').addEventListener('click', function () {
     saveHistory([]);
     renderHistory();
+  });
+  document.getElementById('copyHistoryBtn').addEventListener('click', function () {
+    var btn = document.getElementById('copyHistoryBtn');
+    var items = loadHistory();
+    var done = function (label) { btn.textContent = label; setTimeout(function () { btn.textContent = 'Copy history'; }, 1500); };
+    if (!items.length) { done('Nothing to copy'); return; }
+    var text = items.map(function (it) {
+      return it.when + ' — ' + it.glyphs + ' — ' + it.text + (it.question ? ' (Q: ' + it.question + ')' : '');
+    }).join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done('Copied'); }, function () { done('Copy failed'); });
+    } else {
+      done('Copy failed');
+    }
   });
   renderHistory();
 </script>
