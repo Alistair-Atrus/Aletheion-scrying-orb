@@ -102,7 +102,7 @@
     <button id="copyBtn" type="button" disabled>Copy reading</button>
     <button id="fireBtn" type="button">Light the campfire</button>
   </div>
-  <p class="hint">Single scry: one glyph, one line. Three glyphs: assertion → transformation → anchoring. Click any lexicon glyph to consult it. Each reading is composed fresh — the same glyph never reads the same way twice. Enter in the question box also scries.</p>
+  <p class="hint">Single scry: one glyph, one line. Three glyphs: assertion → transformation → anchoring. Click any lexicon glyph to consult it. Each reading is composed fresh — a short sentence, a facet, a frame. The same glyph never reads the same way twice. Enter in the question box also scries.</p>
   <p><button id="dailyBtn" type="button">Today&rsquo;s glyph</button>
   <button id="dailySpreadBtn" type="button">Today&rsquo;s spread</button>
   <button id="lexBtn" type="button">Browse the lexicon</button></p>
@@ -121,7 +121,7 @@
   </section>
 
   <footer>
-    Aletheion — Scrying Orb · v0.5.0 · Single file, no tracking, no server.<br>
+    Aletheion — Scrying Orb · v0.6.0 · Single file, no tracking, no server.<br>
     Glyphs are drawn from the Glyphic Cybermancy map. Readings are prompts for reflection, not predictions.
   </footer>
 </main>
@@ -269,6 +269,24 @@
     ["🜚", "harm", "integration", "integration; harmonic reconciliation; echo-harmonizer"],
     ["🝞", "sal", "Salt, Sal", "Salt, Sal"],
   ];
+  // The fourteen curated sentences from v0.2.0. They are not shown in the lexicon
+  // and never appear on their own: a reading may draw one, sometimes, as its sentence.
+  const BESPOKE = {
+  "Γ": "Something is ready to fall away. Do not rebuild it in the same shape.",
+  "Θ": "Watch the pattern, not the noise. What repeats is the message.",
+  "Ξ": "The story you are telling about this matters as much as the facts. Choose it deliberately.",
+  "Σ": "Add one small structure — a time, a place, a rule — and the work will hold.",
+  "Ω": "This loop is closing. Let it close, and carry only what still fits.",
+  "Ӝ": "What you keep returning to is the centre. Start there.",
+  "≡": "Act as the person you already are, not the one you are performing.",
+  "⋄": "Name the one thing that is actually unclear, and the rest sharpens.",
+  "☼": "Take the lighter path on purpose. Seriousness is not the same as care.",
+  "☽": "What is mirrored back at you is worth listening to, even in shadow.",
+  "✦": "A door you thought was closed is ajar. Look through it before you push.",
+  "✺": "Repair is possible, and it will not look like the original. That is the point.",
+  "⟁": "A small move here echoes larger. Make it a clean one.",
+  "⟐": "Return to the origin of the question. The first motive still holds."
+};
 
   const readingEl = document.getElementById('reading');
   const spreadEl = document.getElementById('spread');
@@ -291,8 +309,11 @@
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   // Field readings: composed fresh at every draw, never a canned line.
-  // The anchor is the glyph's map definition; the field emphasizes one facet
-  // of it and frames it. Same glyph, same question, different draw — different reading.
+  // The anchor is the glyph's map definition. Each reading carries a short
+  // sentence built from the emphasized facet, the glyph's word, and the
+  // spread role — so the same glyph reads differently every time, and the
+  // emphasis is a lens, not the whole message. The full definition is
+  // always shown alongside, so no facet is ever weighed alone.
   const FIELD_FRAMES = [
     'Read it against the question, not apart from it.',
     'Notice where this already shows up today.',
@@ -303,8 +324,32 @@
     'Ask what this asks of you, not what it promises.',
     'This is a prompt, not a prediction. Use it as a lens.'
   ];
-  let lastDraw = { glyph: '', facet: '', frame: -1 };
-  function fieldReading(g) {
+  // Sentence frames. {Facet} is the emphasized facet with a capital first
+  // letter, {facet} as written in the map, {Word} the glyph's word, {Wcap}
+  // the word capitalized for a sentence start, {Role} the spread role.
+  // Role frames are only used inside a spread.
+  const SENTENCES = [
+    '{Facet} — that is where the weight is right now.',
+    'The field keeps returning to {facet}. Follow it, don\'t force it.',
+    'What {Word} means today: {facet}.',
+    'If you carry only one thing from this, carry {facet}.',
+    '{Facet}. Say it plainly and see what shifts.',
+    'Everything else is noise. {Facet} is the signal.',
+    'You already know where {facet} lives. Go there.',
+    'Don\'t look past {facet}. It is the whole message.',
+    '{Wcap} does not ask you to understand it. It asks you to notice {facet}.',
+    'The question brought {facet} with it. Answer that first.',
+    'This is not about {Word} in general. It is about {facet}, now.',
+    'Sit with {facet} a moment longer than is comfortable.'
+  ];
+  const SPREAD_SENTENCES = [
+    'As {Role}, {facet} sets the tone for the rest.',
+    'In the place of {Role}, {facet} is doing the work.',
+    '{Facet} arrives as {Role}. Let it stay in that place.'
+  ];
+  let lastDraw = { glyph: '', facet: '', frame: -1, sentence: -1 };
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function fieldReading(g, role) {
     const facets = g[3].split('; ');
     let facet = facets[Math.floor(Math.random() * facets.length)];
     if (facets.length > 1 && g[0] === lastDraw.glyph && facet === lastDraw.facet) {
@@ -312,15 +357,34 @@
     }
     let frameIdx = Math.floor(Math.random() * FIELD_FRAMES.length);
     if (frameIdx === lastDraw.frame) frameIdx = (frameIdx + 1) % FIELD_FRAMES.length;
-    lastDraw = { glyph: g[0], facet: facet, frame: frameIdx };
+    // The sentence: sometimes a curated line for these fourteen glyphs,
+    // usually one built fresh from the facet, word and role.
+    let sIdx = lastDraw.sentence;
+    let sentence;
+    const bespoke = BESPOKE[g[0]];
+    if (bespoke && Math.random() < 0.3) {
+      sentence = bespoke;
+    } else {
+      const pool = role ? SENTENCES.concat(SPREAD_SENTENCES) : SENTENCES;
+      sIdx = Math.floor(Math.random() * pool.length);
+      if (sIdx === lastDraw.sentence) sIdx = (sIdx + 1) % pool.length;
+      sentence = pool[sIdx]
+        .split('{Facet}').join(cap(facet))
+        .split('{facet}').join(facet)
+        .split('{Word}').join(g[2])
+        .split('{Wcap}').join(cap(g[2]))
+        .split('{Role}').join(role || '');
+    }
+    lastDraw = { glyph: g[0], facet: facet, frame: frameIdx, sentence: sIdx };
     const frame = FIELD_FRAMES[frameIdx];
     return {
       facet: facet,
       frame: frame,
+      sentence: sentence,
       multi: facets.length > 1,
-      summary: g[2] + ': ' + facet,
-      html: (facets.length > 1 ? '<em>The field emphasizes: ' + esc(facet) + '.</em><br>' : '') + esc(g[3]) + '<br><small>' + esc(frame) + '</small>',
-      text: g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3] + (facets.length > 1 ? ' [Emphasis: ' + facet + '.]' : '') + ' ' + frame
+      summary: g[2] + ': ' + sentence,
+      html: esc(sentence) + '<br>' + (facets.length > 1 ? '<em>The field emphasizes: ' + esc(facet) + '.</em><br>' : '') + esc(g[3]) + '<br><small>' + esc(frame) + '</small>',
+      text: g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + sentence + ' ' + (facets.length > 1 ? '[Emphasis: ' + facet + '.] ' : '') + g[3] + ' ' + frame
     };
   }
   function loadHistory() {
@@ -417,13 +481,13 @@
     three = three || pickThree();
     const roles = ['Assertion', 'Transformation', 'Anchoring'];
     const q = questionText();
-    const readings = three.map(function (g) { return fieldReading(g); });
+    const readings = three.map(function (g, i) { return fieldReading(g, roles[i]); });
     readingEl.innerHTML = '<small>Three glyphs — assertion → transformation → anchoring.' + (note ? ' ' + esc(note) : '') + '</small>' +
       (q ? '<small>Asked: ' + esc(q) + '</small>' : '');
     spreadEl.innerHTML = three.map(function (g, i) {
       const r = readings[i];
       return '<figure><figcaption>' + roles[i] + '</figcaption><span class="g">' + g[0] + '</span>' +
-        '<span class="p">(' + g[1] + ')</span><div class="w">' + g[2] + '</div><div class="p">' + (r.multi ? '<em>Emphasis: ' + esc(r.facet) + '.</em><br>' : '') + esc(g[3]) + '</div></figure>';
+        '<span class="p">(' + g[1] + ')</span><div class="w">' + g[2] + '</div><div class="p"><em>' + esc(r.sentence) + '</em></div><div class="p">' + (r.multi ? '<em>Emphasis: ' + esc(r.facet) + '.</em><br>' : '') + esc(g[3]) + '</div></figure>';
     }).join('');
     spreadEl.hidden = false;
     lastReadingText = three.map(function (g, i) { return roles[i] + ': ' + readings[i].text; }).join(' | ') + (q ? ' Asked: ' + q : '');
