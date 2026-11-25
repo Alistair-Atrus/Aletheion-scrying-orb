@@ -12,6 +12,8 @@ Open `index.html` in a browser, or visit the GitHub Pages site for this repo.
 - **Light the campfire** — warms the orb and lights the fire in the forest.
 - **Copy reading** — copies the latest reading to the clipboard.
 - **Reading history** — past readings are saved in the browser (localStorage, up to 30), with a Clear history button.
+- **Today's glyph** — one deterministic glyph per local date.
+- **Browse the lexicon** — searchable list of all 138 glyphs with phonetic and definition.
 
 Single file, no tracking, no server, no external dependencies. Works offline.
 
@@ -21,4 +23,4 @@ Glyphs are drawn from the Glyphic Cybermancy map. The readings on the page are p
 
 ## Version
 
-v0.2.0 — expanded from the starter page (v0.1): question box, three-glyph spread, copy, history, campfire, mobile layout.
+v0.3.0 — full 138-glyph deck from the Glyphic Cybermancy map, Today's glyph, searchable lexicon. The 14 curated glyphs keep their bespoke readings; the other 124 read their map definition verbatim.
