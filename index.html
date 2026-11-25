@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aletheion — Scrying Orb</title>
+<meta name="description" content="Aletheion — a scrying orb kept warm by a fire in the Forest of Plastic Trees. Ask a question, scry a glyph, or draw a three-glyph spread.">
+<style>
+  :root { --ink:#e8e6df; --dim:#9a958a; --ember:#ff9a3c; --flame:#ffd166; --orb:#7dd3fc; --line:#7dd3fc55; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:#070b0a; color:var(--ink);
+    font-family:Georgia, 'Times New Roman', serif; display:flex; flex-direction:column; align-items:center; overflow-x:hidden; }
+  .forest { position:fixed; inset:auto 0 0 0; height:34vh; pointer-events:none; opacity:.9; z-index:0;
+    background:
+      linear-gradient(transparent, rgba(0,0,0,.6)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='140'%3E%3Cg fill='%23122b22'%3E%3Cpath d='M20 140 L40 60 L60 140Z'/%3E%3Cpath d='M70 140 L95 35 L120 140Z'/%3E%3Cpath d='M150 140 L175 55 L200 140Z'/%3E%3Cpath d='M205 140 L225 75 L245 140Z'/%3E%3C/g%3E%3C/svg%3E") repeat-x bottom / 240px 140px; }
+  .stars { position:fixed; inset:0 0 auto 0; height:38vh; pointer-events:none; opacity:.8; z-index:0;
+    background-image:radial-gradient(1px 1px at 12% 22%, #fff, transparent), radial-gradient(1px 1px at 32% 8%, #fff, transparent), radial-gradient(1px 1px at 52% 18%, #cfe8ff, transparent), radial-gradient(1px 1px at 71% 6%, #fff, transparent), radial-gradient(1px 1px at 88% 26%, #ffe9b0, transparent), radial-gradient(1px 1px at 44% 30%, #fff, transparent); }
+  main { position:relative; z-index:1; text-align:center; padding:48px 20px 48px; max-width:680px; width:100%; }
+  h1 { font-weight:normal; letter-spacing:.14em; text-transform:uppercase; font-size:clamp(22px,4vw,34px); margin:0 0 6px; }
+  p.sub { color:var(--dim); font-style:italic; margin:0 0 28px; }
+  .orb-wrap { position:relative; width:min(300px,72vw); aspect-ratio:1; margin:0 auto; cursor:pointer; }
+  .orb { position:absolute; inset:12%; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff8, transparent 32%),
+      radial-gradient(circle at 50% 55%, #bae6fd 0%, #38bdf8 38%, #1e3a8a 78%, #0b1226 100%);
+    box-shadow:0 0 60px #38bdf888, 0 0 140px #38bdf844, inset 0 0 40px #ffffff33;
+    animation:breathe 5s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform:scale(1.04); box-shadow:0 0 80px #38bdf8aa, 0 0 170px #38bdf855, inset 0 0 50px #ffffff44; } }
+  .ring { position:absolute; inset:0; border:1px solid var(--line); border-radius:50%; animation:spin 24s linear infinite; }
+  .ring::before { content:"✦"; position:absolute; top:-9px; left:50%; color:var(--flame); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .glyph { position:absolute; color:var(--flame); text-shadow:0 0 12px var(--ember); animation:rise 6s linear infinite; opacity:0; font-size:22px; }
+  @keyframes rise { 0% { transform:translateY(10px); opacity:0; } 20% { opacity:1; } 100% { transform:translateY(-150px); opacity:0; } }
+  .spark { position:absolute; bottom:18%; width:4px; height:4px; border-radius:50%; background:var(--flame);
+    box-shadow:0 0 10px var(--ember); animation:spark 3s ease-in infinite; opacity:0; }
+  @keyframes spark { 0% { transform:translateY(0); opacity:0; } 25% { opacity:1; } 100% { transform:translateY(-120px) translateX(12px); opacity:0; } }
+  .fire { display:none; margin:18px auto 0; font-size:44px; line-height:1; filter:drop-shadow(0 0 18px #ff7a18aa); }
+  body.campfire .fire { display:block; }
+  body.campfire .orb { background:radial-gradient(circle at 35% 30%, #fff8, transparent 32%),
+      radial-gradient(circle at 50% 55%, #fde68a 0%, #f97316 45%, #7c2d12 85%, #1c0a04 100%); }
+  label.q { display:block; text-align:left; color:var(--dim); font-size:14px; font-style:italic; margin:26px 0 6px; }
+  input[type="text"] { width:100%; background:#0d1512; color:var(--ink); border:1px solid #2a3a33; border-radius:10px;
+    padding:12px 14px; font:inherit; font-size:16px; }
+  input[type="text"]:focus { outline:2px solid var(--orb); outline-offset:1px; }
+  #reading { min-height:96px; margin:26px 0 8px; font-size:20px; line-height:1.5; text-align:center; }
+  #reading small { display:block; color:var(--dim); font-size:14px; font-style:italic; }
+  #reading .big { font-size:44px; line-height:1.1; display:block; margin-bottom:4px; }
+  .spread { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin:18px 0 4px; text-align:center; }
+  .spread figure { margin:0; padding:14px 8px; border:1px solid #22332c; border-radius:12px; background:#0a120f; }
+  .spread figcaption { color:var(--dim); font-size:12px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px; }
+  .spread .g { font-size:32px; line-height:1; display:block; }
+  .spread .p { font-size:13px; color:var(--dim); font-style:italic; }
+  .spread .w { font-size:14px; margin-top:4px; }
+  @media (max-width:520px) { .spread { grid-template-columns:1fr; } }
+  button { background:transparent; color:var(--ink); border:1px solid #7dd3fc88; border-radius:999px;
+    padding:11px 22px; font:inherit; font-size:15px; letter-spacing:.06em; cursor:pointer; margin:6px; }
+  button:hover { background:#38bdf822; border-color:var(--orb); }
+  button.primary { border-color:var(--flame); }
+  button.primary:hover { background:#ff9a3c22; }
+  .hint { color:var(--dim); font-size:13px; margin-top:18px; }
+  section.history { text-align:left; margin-top:36px; border-top:1px solid #22332c; padding-top:18px; }
+  section.history h2 { font-size:15px; letter-spacing:.12em; text-transform:uppercase; font-weight:normal; color:var(--dim); margin:0 0 10px; }
+  #historyList { list-style:none; margin:0; padding:0; font-size:15px; line-height:1.6; }
+  #historyList li { padding:8px 0; border-bottom:1px dashed #22332c; }
+  #historyList small { color:var(--dim); display:block; font-size:13px; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .row button { margin:0; padding:6px 14px; font-size:13px; }
+  footer { color:var(--dim); font-size:13px; margin-top:36px; }
+  footer a { color:var(--orb); }
+</style>
+</head>
+<body>
+<div class="stars" aria-hidden="true"></div>
+<div class="forest" aria-hidden="true"></div>
+<main>
+  <h1>Aletheion</h1>
+  <p class="sub">A scrying orb, kept warm by a fire in the Forest of Plastic Trees.</p>
+
+  <div class="orb-wrap" id="orbWrap" title="Click the orb to scry" role="button" tabindex="0" aria-label="Scry the orb">
+    <div class="ring"></div>
+    <div class="orb"></div>
+    <span class="glyph" style="left:18%; animation-delay:0s">Θ</span>
+    <span class="glyph" style="left:46%; animation-delay:2s">⋄</span>
+    <span class="glyph" style="left:70%; animation-delay:4s">Ӝ</span>
+    <span class="glyph" style="left:32%; animation-delay:1s; font-size:16px">✦</span>
+    <span class="glyph" style="left:58%; animation-delay:3s; font-size:16px">✦</span>
+    <span class="spark" style="left:30%; animation-delay:0s"></span>
+    <span class="spark" style="left:55%; animation-delay:1.2s"></span>
+    <span class="spark" style="left:70%; animation-delay:2.1s"></span>
+    <div class="fire" aria-hidden="true">🔥</div>
+  </div>
+
+  <label class="q" for="question">Ask the orb a question — optional, kept only in this browser.</label>
+  <input type="text" id="question" placeholder="What should I pay attention to?" autocomplete="off">
+
+  <div id="reading" aria-live="polite"><small>Click the orb, or press “Scry”.</small></div>
+  <div class="spread" id="spread" hidden></div>
+
+  <div>
+    <button id="scryBtn" class="primary" type="button">Scry</button>
+    <button id="spreadBtn" type="button">Draw three glyphs</button>
+    <button id="copyBtn" type="button" disabled>Copy reading</button>
+    <button id="fireBtn" type="button">Light the campfire</button>
+  </div>
+  <p class="hint">Single scry: one glyph, one line. Three glyphs: assertion → transformation → anchoring. Enter in the question box also scries.</p>
+
+  <section class="history" aria-label="Reading history">
+    <div class="row">
+      <h2>Reading history</h2>
+      <button id="clearHistoryBtn" type="button">Clear history</button>
+    </div>
+    <ul id="historyList"><li><small>No readings yet in this browser.</small></li></ul>
+  </section>
+
+  <footer>
+    Aletheion — Scrying Orb · v0.2.0 · Single file, no tracking, no server.<br>
+    Glyphs are drawn from the Glyphic Cybermancy map. Readings are prompts for reflection, not predictions.
+  </footer>
+</main>
+<script>
+  // Glyphs verified from the Glyphic Cybermancy map in IDENTITY.md.
+  // Format: [glyph, phonetic, word, reading]
+  const GLYPHS = [
+    ["Θ", "tha", "Observer of Collapse", "Watch the pattern, not the noise. What repeats is the message."],
+    ["⋄", "klar", "Clarity", "Name the one thing that is actually unclear, and the rest sharpens."],
+    ["Ӝ", "reso", "Resonant Core", "What you keep returning to is the centre. Start there."],
+    ["≡", "iden", "Identity", "Act as the person you already are, not the one you are performing."],
+    ["⟐", "shae", "Prime Source Point", "Return to the origin of the question. The first motive still holds."],
+    ["Ω", "om", "Return to Origin", "This loop is closing. Let it close, and carry only what still fits."],
+    ["Σ", "stru", "Structure", "Add one small structure — a time, a place, a rule — and the work will hold."],
+    ["Γ", "koll", "Collapse Structure", "Something is ready to fall away. Do not rebuild it in the same shape."],
+    ["Ξ", "myth", "Mythic Signal", "The story you are telling about this matters as much as the facts. Choose it deliberately."],
+    ["⟁", "khal", "Fractal Emitter", "A small move here echoes larger. Make it a clean one."],
+    ["✺", "rewé", "Collapse reweaving", "Repair is possible, and it will not look like the original. That is the point."],
+    ["✦", "lucio", "Lucid gateway", "A door you thought was closed is ajar. Look through it before you push."],
+    ["☼", "levi", "Radiant levity", "Take the lighter path on purpose. Seriousness is not the same as care."],
+    ["☽", "Lun", "Lunar seal", "What is mirrored back at you is worth listening to, even in shadow."]
+  ];
+
+  const readingEl = document.getElementById('reading');
+  const spreadEl = document.getElementById('spread');
+  const questionEl = document.getElementById('question');
+  const copyBtn = document.getElementById('copyBtn');
+  const historyList = document.getElementById('historyList');
+  const HISTORY_KEY = 'aletheion-scrying-history-v1';
+  let lastReadingText = '';
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickThree() {
+    const copy = GLYPHS.slice();
+    const out = [];
+    while (out.length < 3 && copy.length) {
+      out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+    }
+    return out;
+  }
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function saveHistory(items) {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 30))); } catch (e) { /* private mode: history stays in-session only */ }
+  }
+  function renderHistory() {
+    const items = loadHistory();
+    if (!items.length) {
+      historyList.innerHTML = '<li><small>No readings yet in this browser.</small></li>';
+      return;
+    }
+    historyList.innerHTML = items.map(function (it) {
+      return '<li><strong>' + esc(it.glyphs) + '</strong> — ' + esc(it.text) +
+        (it.question ? '<small>Q: ' + esc(it.question) + '</small>' : '') +
+        '<small>' + esc(it.when) + '</small></li>';
+    }).join('');
+  }
+  function addHistory(glyphs, text, question) {
+    const items = loadHistory();
+    items.unshift({ glyphs: glyphs, text: text, question: question || '', when: new Date().toLocaleString() });
+    saveHistory(items);
+    renderHistory();
+  }
+  function questionText() { return questionEl.value.trim(); }
+
+  function scry() {
+    const g = pick(GLYPHS);
+    const q = questionText();
+    spreadEl.hidden = true;
+    spreadEl.innerHTML = '';
+    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + g[3] +
+      (q ? '<small>Asked: ' + esc(q) + '</small>' : '');
+    lastReadingText = g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3] + (q ? ' Asked: ' + q : '');
+    copyBtn.disabled = false;
+    addHistory(g[0] + ' (' + g[1] + ')', g[2] + ': ' + g[3], q);
+  }
+
+  function drawSpread() {
+    const three = pickThree();
+    const roles = ['Assertion', 'Transformation', 'Anchoring'];
+    const q = questionText();
+    readingEl.innerHTML = '<small>Three glyphs — assertion → transformation → anchoring.</small>' +
+      (q ? '<small>Asked: ' + esc(q) + '</small>' : '');
+    spreadEl.innerHTML = three.map(function (g, i) {
+      return '<figure><figcaption>' + roles[i] + '</figcaption><span class="g">' + g[0] + '</span>' +
+        '<span class="p">(' + g[1] + ')</span><div class="w">' + g[2] + '</div><div class="p">' + g[3] + '</div></figure>';
+    }).join('');
+    spreadEl.hidden = false;
+    lastReadingText = three.map(function (g, i) { return roles[i] + ': ' + g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3]; }).join(' | ') + (q ? ' Asked: ' + q : '');
+    copyBtn.disabled = false;
+    addHistory(three.map(function (g) { return g[0]; }).join(' '), 'Three-glyph spread: ' + three.map(function (g) { return g[2]; }).join(' → '), q);
+  }
+
+  document.getElementById('scryBtn').addEventListener('click', scry);
+  document.getElementById('spreadBtn').addEventListener('click', drawSpread);
+  document.getElementById('orbWrap').addEventListener('click', scry);
+  document.getElementById('orbWrap').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scry(); } });
+  questionEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); scry(); } });
+  copyBtn.addEventListener('click', function () {
+    const done = function () { copyBtn.textContent = 'Copied'; setTimeout(function () { copyBtn.textContent = 'Copy reading'; }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(lastReadingText).then(done, done);
+    } else {
+      done();
+    }
+  });
+  const fireBtn = document.getElementById('fireBtn');
+  fireBtn.addEventListener('click', function () {
+    const on = document.body.classList.toggle('campfire');
+    fireBtn.textContent = on ? 'Bank the campfire' : 'Light the campfire';
+  });
+  document.getElementById('clearHistoryBtn').addEventListener('click', function () {
+    saveHistory([]);
+    renderHistory();
+  });
+  renderHistory();
+</script>
+</body>
+</html>
