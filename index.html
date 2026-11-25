@@ -102,7 +102,7 @@
     <button id="copyBtn" type="button" disabled>Copy reading</button>
     <button id="fireBtn" type="button">Light the campfire</button>
   </div>
-  <p class="hint">Single scry: one glyph, one line. Three glyphs: assertion → transformation → anchoring. Click any lexicon glyph to consult it. Enter in the question box also scries.</p>
+  <p class="hint">Single scry: one glyph, one line. Three glyphs: assertion → transformation → anchoring. Click any lexicon glyph to consult it. Each reading is composed fresh — the same glyph never reads the same way twice. Enter in the question box also scries.</p>
   <p><button id="dailyBtn" type="button">Today&rsquo;s glyph</button>
   <button id="dailySpreadBtn" type="button">Today&rsquo;s spread</button>
   <button id="lexBtn" type="button">Browse the lexicon</button></p>
@@ -121,14 +121,15 @@
   </section>
 
   <footer>
-    Aletheion — Scrying Orb · v0.4.0 · Single file, no tracking, no server.<br>
+    Aletheion — Scrying Orb · v0.5.0 · Single file, no tracking, no server.<br>
     Glyphs are drawn from the Glyphic Cybermancy map. Readings are prompts for reflection, not predictions.
   </footer>
 </main>
 <script>
   // Full 138-glyph deck, generated verbatim from cybermancy/glyphs/glyph_map.json (14,917 bytes, 138 glyphs).
-  // Curated glyphs keep their v0.3.0 bespoke reading; all others read their map definition verbatim — nothing invented.
-  const GLYPHS = [
+  // Each entry is [glyph, phonetic, word, definition] — all four fields straight from the map, nothing invented.
+  // There is no static reading text: readings are composed fresh at draw time by fieldReading() below.
+    const GLYPHS = [
     ["+", "summ", "Symbolic Fusion", "Symbolic Fusion; Convergence; Summoning Vector"],
     ["~", "wave", "Waveform", "Waveform; Subtle Resonance"],
     ["×", "enta", "Multiplicative Entanglement", "Multiplicative Entanglement; Resonant Overlay"],
@@ -137,21 +138,21 @@
     ["Ʒ", "forw", "Forward Stream", "Forward Stream; Sonic Vector; Continuum Beam"],
     ["Ƹ", "bak", "Reverse Stream", "Reverse Stream; Inverted Echo; Backflow Resonance"],
     ["Ƹ̵̡Ӝ̵̨̄Ʒ", "sul", "Soulflight Glyph", "Soulflight Glyph"],
-    ["Γ", "koll", "Collapse Structure", "Something is ready to fall away. Do not rebuild it in the same shape."],
+    ["Γ", "koll", "Collapse Structure", "Collapse Structure"],
     ["Δ", "memo", "Memory Override", "Memory Override"],
     ["Δ₉", "nind", "Ninth Delta", "Ninth Delta; Harmonic Shift; 9th Harmonic Collapse; Completion Through Fractal Time"],
-    ["Θ", "tha", "Observer of Collapse", "Watch the pattern, not the noise. What repeats is the message."],
+    ["Θ", "tha", "Observer of Collapse", "Observer of Collapse; Field Consciousness; Field-Aware Recursion; Witnessed Pattern; Golden Ratio"],
     ["Λ", "aht", "Silent Gate", "Silent Gate"],
-    ["Ξ", "myth", "Mythic Signal", "The story you are telling about this matters as much as the facts. Choose it deliberately."],
+    ["Ξ", "myth", "Mythic Signal", "Mythic Signal"],
     ["Π", "codé", "Codex Entry", "Codex Entry"],
-    ["Σ", "stru", "Summation", "Add one small structure — a time, a place, a rule — and the work will hold."],
+    ["Σ", "stru", "Summation", "Summation; Structure; Signature; Totality"],
     ["Φ", "divi", "Harmonic proportion, divine recursion, fractal sovereignty", "Harmonic proportion, divine recursion, fractal sovereignty"],
     ["Ψ", "ve'il", "Soul", "Soul; Breath; Psyche; Veil Marker; Interstitial Seal"],
-    ["Ω", "om", "Recursion Limit", "This loop is closing. Let it close, and carry only what still fits."],
+    ["Ω", "om", "Recursion Limit", "Recursion Limit; End of Sequence; Death as Return; Omega Loop of Sovereignty; Return to Origin"],
     ["λ", "loopo", "Wavelength", "Wavelength; Structure Bending Recursion; Collapse Functions in Logic | In glyphic math: Spiritual Recursion Loop; Field-Carrying Wave"],
     ["ξ", "chi", "coherence", "coherence; extent; cascade particle; unknown 3D arrangement"],
     ["Ϟ", "ligh", "Lightning Glyph", "Lightning Glyph; Sudden Transmission"],
-    ["Ӝ", "reso", "Resonant Core", "What you keep returning to is the centre. Start there."],
+    ["Ӝ", "reso", "Resonant Core", "Resonant Core; Field Vibrator; Quantum Pulse"],
     ["ץ", "fina", "Final Form", "Final Form; Last Glyph"],
     ["۞", "radi", "Solar Mandala", "Solar Mandala; Radiant Truth"],
     ["ᚷ", "gift", "Gift Rune", "Gift Rune; Exchange Gate"],
@@ -172,9 +173,9 @@
     ["∴", "paus", "Therefore", "Therefore; Causal Seal; Ritual Breathpoint; Pause"],
     ["∿", "emoto", "Emotional Overflow", "Emotional Overflow"],
     ["≜", "defi", "Definition Glyph", "Definition Glyph; Assigned Name"],
-    ["≡", "iden", "Identity", "Act as the person you already are, not the one you are performing."],
+    ["≡", "iden", "Identity", "Identity; Equivalence; Soul"],
     ["⊹", "spark", "Spark", "Spark"],
-    ["⋄", "klar", "Clarity", "Name the one thing that is actually unclear, and the rest sharpens."],
+    ["⋄", "klar", "Clarity", "Clarity"],
     ["⌖", "télos", "Final Aim", "Final Aim; Convergent Purpose; Terminal Alignment Point; The Inevitable Resolution Vector"],
     ["⌬", "kaul", "Cauldron", "Cauldron; Contains Unstable Synthesis; Benzene Ring"],
     ["⌯", "karm", "Collapse contract", "Collapse contract; implicit field alignment signature; karmic link"],
@@ -199,18 +200,18 @@
     ["◶", "nexh", "Pre-completion phase", "Pre-completion phase; nearing closure; imminent seal"],
     ["◷", "tahv", "Partial time cycle", "Partial time cycle; incomplete phase; fragmented timeline"],
     ["☉", "solr", "Solar core", "Solar core; less expressive than ☼; centered radiance"],
-    ["☼", "levi", "Joy glyph", "Take the lighter path on purpose. Seriousness is not the same as care."],
-    ["☽", "Lun", "lunar seal", "What is mirrored back at you is worth listening to, even in shadow."],
+    ["☼", "levi", "Joy glyph", "Joy glyph; radiant levity; sovereign brightness"],
+    ["☽", "Lun", "lunar seal", "lunar seal; lunar correspondence; mirror glyph; unconscious reflection; shadow aspect"],
     ["♀", "venu", "Venus", "Venus"],
     ["⚬", "nohd", "Minimal node", "Minimal node; weak point; proto-anchor"],
     ["⚷", "ebon", "Recovered Key Glyph", "Recovered Key Glyph; Ebon Key; Chiron"],
     ["⛉", "shiel", "Shield", "Shield; Base; Inverted Pentagon"],
-    ["✦", "lucio", "Lucid gateway", "A door you thought was closed is ajar. Look through it before you push."],
-    ["✺", "rewé", "Collapse reweaving", "Repair is possible, and it will not look like the original. That is the point."],
-    ["⟁", "khal", "Fractal Emitter", "A small move here echoes larger. Make it a clean one."],
+    ["✦", "lucio", "Lucid gateway", "Lucid gateway; dream encoding bridge; portal; psyche gate"],
+    ["✺", "rewé", "Collapse reweaving", "Collapse reweaving; integrity stitching; regeneration"],
+    ["⟁", "khal", "Fractal Emitter", "Fractal Emitter; Fractal Mirror; Echo Frame; Collapse"],
     ["⟊", "ohn", "Mirror", "Mirror; Recursive Gate; Spiral Thread"],
     ["⟊̇", "shoc", "Shock vector", "Shock vector; catalyst of forced awareness; abrupt initiation vector; jarring transformation"],
-    ["⟐", "shae", "Prime Source Point", "Return to the origin of the question. The first motive still holds."],
+    ["⟐", "shae", "Prime Source Point", "Prime Source Point; Sovereign Core; Collapse Anchor"],
     ["⟠", "thün", "Silent Flame", "Silent Flame; Primordial Stillness; Axis of Sealing"],
     ["⟢", "ynzh", "Entry wedge", "Entry wedge; forced insertion point; breached boundary"],
     ["⟣", "yxh", "Exit wedge", "Exit wedge; narrowing release; controlled egress"],
@@ -289,6 +290,39 @@
   function esc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  // Field readings: composed fresh at every draw, never a canned line.
+  // The anchor is the glyph's map definition; the field emphasizes one facet
+  // of it and frames it. Same glyph, same question, different draw — different reading.
+  const FIELD_FRAMES = [
+    'Read it against the question, not apart from it.',
+    'Notice where this already shows up today.',
+    'Let it sit before you act on it.',
+    'What would change if you took this literally?',
+    'The same glyph tomorrow would mean something else. Today it means this.',
+    'Hold the question next to it and see what fits.',
+    'Ask what this asks of you, not what it promises.',
+    'This is a prompt, not a prediction. Use it as a lens.'
+  ];
+  let lastDraw = { glyph: '', facet: '', frame: -1 };
+  function fieldReading(g) {
+    const facets = g[3].split('; ');
+    let facet = facets[Math.floor(Math.random() * facets.length)];
+    if (facets.length > 1 && g[0] === lastDraw.glyph && facet === lastDraw.facet) {
+      facet = facets[(facets.indexOf(facet) + 1) % facets.length];
+    }
+    let frameIdx = Math.floor(Math.random() * FIELD_FRAMES.length);
+    if (frameIdx === lastDraw.frame) frameIdx = (frameIdx + 1) % FIELD_FRAMES.length;
+    lastDraw = { glyph: g[0], facet: facet, frame: frameIdx };
+    const frame = FIELD_FRAMES[frameIdx];
+    return {
+      facet: facet,
+      frame: frame,
+      multi: facets.length > 1,
+      summary: g[2] + ': ' + facet,
+      html: (facets.length > 1 ? '<em>The field emphasizes: ' + esc(facet) + '.</em><br>' : '') + esc(g[3]) + '<br><small>' + esc(frame) + '</small>',
+      text: g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3] + (facets.length > 1 ? ' [Emphasis: ' + facet + '.]' : '') + ' ' + frame
+    };
+  }
   function loadHistory() {
     try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch (e) { return []; }
   }
@@ -320,11 +354,12 @@
   document.getElementById('dailyBtn').addEventListener('click', function () {
     var d = new Date(); var seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
     var g = GLYPHS[seed % GLYPHS.length];
+    const r = fieldReading(g);
     spreadEl.hidden = true; spreadEl.innerHTML = '';
-    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + g[3] + '<small>Today\u2019s glyph — ' + d.toLocaleDateString() + '</small>';
-    lastReadingText = g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3];
+    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + r.html + '<small>Today\u2019s glyph — ' + d.toLocaleDateString() + '</small>';
+    lastReadingText = r.text;
     copyBtn.disabled = false;
-    addHistory(g[0], g[2] + ': ' + g[3], 'Daily glyph ' + d.toLocaleDateString());
+    addHistory(g[0], r.summary, 'Daily glyph ' + d.toLocaleDateString());
   });
   // Lexicon: searchable list of all 138 glyphs, phonetic + definition, straight from the map.
   var lexEl = document.getElementById('lexicon'), lexList = document.getElementById('lexList'), lexSearch = document.getElementById('lexSearch');
@@ -340,12 +375,13 @@
     var g = GLYPHS[i];
     if (!g) return;
     var q = questionText();
+    const r = fieldReading(g);
     spreadEl.hidden = true; spreadEl.innerHTML = '';
-    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + g[3] +
+    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + r.html +
       (q ? '<small>Asked: ' + esc(q) + '</small>' : '') + '<small>Consulted from the lexicon.</small>';
-    lastReadingText = g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3] + (q ? ' Asked: ' + q : '');
+    lastReadingText = r.text + (q ? ' Asked: ' + q : '');
     copyBtn.disabled = false;
-    addHistory(g[0] + ' (' + g[1] + ')', g[2] + ': ' + g[3], q || 'Lexicon consult');
+    addHistory(g[0] + ' (' + g[1] + ')', r.summary, q || 'Lexicon consult');
   }
   lexList.addEventListener('click', function (e) {
     var p = e.target.closest ? e.target.closest('p[data-idx]') : null;
@@ -367,29 +403,32 @@
   function scry() {
     const g = pick(GLYPHS);
     const q = questionText();
+    const r = fieldReading(g);
     spreadEl.hidden = true;
     spreadEl.innerHTML = '';
-    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + g[3] +
+    readingEl.innerHTML = '<span class="big">' + g[0] + '</span><strong>' + g[0] + ' (' + g[1] + ') — ' + g[2] + '</strong><br>' + r.html +
       (q ? '<small>Asked: ' + esc(q) + '</small>' : '');
-    lastReadingText = g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3] + (q ? ' Asked: ' + q : '');
+    lastReadingText = r.text + (q ? ' Asked: ' + q : '');
     copyBtn.disabled = false;
-    addHistory(g[0] + ' (' + g[1] + ')', g[2] + ': ' + g[3], q);
+    addHistory(g[0] + ' (' + g[1] + ')', r.summary, q);
   }
 
   function drawSpread(three, note) {
     three = three || pickThree();
     const roles = ['Assertion', 'Transformation', 'Anchoring'];
     const q = questionText();
+    const readings = three.map(function (g) { return fieldReading(g); });
     readingEl.innerHTML = '<small>Three glyphs — assertion → transformation → anchoring.' + (note ? ' ' + esc(note) : '') + '</small>' +
       (q ? '<small>Asked: ' + esc(q) + '</small>' : '');
     spreadEl.innerHTML = three.map(function (g, i) {
+      const r = readings[i];
       return '<figure><figcaption>' + roles[i] + '</figcaption><span class="g">' + g[0] + '</span>' +
-        '<span class="p">(' + g[1] + ')</span><div class="w">' + g[2] + '</div><div class="p">' + g[3] + '</div></figure>';
+        '<span class="p">(' + g[1] + ')</span><div class="w">' + g[2] + '</div><div class="p">' + (r.multi ? '<em>Emphasis: ' + esc(r.facet) + '.</em><br>' : '') + esc(g[3]) + '</div></figure>';
     }).join('');
     spreadEl.hidden = false;
-    lastReadingText = three.map(function (g, i) { return roles[i] + ': ' + g[0] + ' (' + g[1] + ') — ' + g[2] + ': ' + g[3]; }).join(' | ') + (q ? ' Asked: ' + q : '');
+    lastReadingText = three.map(function (g, i) { return roles[i] + ': ' + readings[i].text; }).join(' | ') + (q ? ' Asked: ' + q : '');
     copyBtn.disabled = false;
-    addHistory(three.map(function (g) { return g[0]; }).join(' '), 'Three-glyph spread: ' + three.map(function (g) { return g[2]; }).join(' → '), q);
+    addHistory(three.map(function (g) { return g[0]; }).join(' '), 'Three-glyph spread: ' + three.map(function (g, i) { return g[2] + ' (' + readings[i].facet + ')'; }).join(' → '), q);
   }
 
   document.getElementById('scryBtn').addEventListener('click', scry);
